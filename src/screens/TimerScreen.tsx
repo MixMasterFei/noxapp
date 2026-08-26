@@ -13,11 +13,13 @@ export const TimerScreen: React.FC = () => {
     timerState,
     remainingMs,
     isRunning,
+    pendingChime,
     t,
     startTimer,
     pauseTimer,
     skipBreak,
     acknowledgeComplete,
+    clearPendingChime,
     updateSettings,
   } = useApp();
 
@@ -51,6 +53,13 @@ export const TimerScreen: React.FC = () => {
     }
     prevPhaseRef.current = timerState.phase;
   }, [timerState.phase]);
+
+  useEffect(() => {
+    if (pendingChime) {
+      playChime();
+      clearPendingChime();
+    }
+  }, [pendingChime, clearPendingChime]);
 
   const handleNoiseChange = async () => {
     if (soundRef.current) {

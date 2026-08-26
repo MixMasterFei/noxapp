@@ -44,6 +44,7 @@ interface AppContextType {
   sessions: Session[];
   remainingMs: number;
   isRunning: boolean;
+  pendingChime: boolean;
   
   updateSettings: (partial: Partial<Settings>) => void;
   t: (key: TranslationKey) => string;
@@ -53,6 +54,7 @@ interface AppContextType {
   skipBreak: () => void;
   resetTimer: () => void;
   acknowledgeComplete: () => void;
+  clearPendingChime: () => void;
   
   getSessionsForDate: (date: string) => { count: number; totalMs: number };
   getTotalStats: () => { days: number; totalMs: number };
@@ -77,6 +79,13 @@ const getLocalDateString = (date: Date = new Date()): string => {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+const isAppForeground = (): boolean => {
+  if (Platform.OS === 'web') {
+    return typeof document !== 'undefined' && document.visibilityState === 'visible';
+  }
+  return AppState.currentState === 'active';
+};
+
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [settings, setSettings] = useState<Settings>(defaultSettings);
   const [timerState, setTimerState] = useState<TimerState>({
@@ -89,6 +98,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [sessions, setSessions] = useState<Session[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
   const [tick, setTick] = useState(0);
+  const [pendingChime, setPendingChime] = useState(false);
   
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const settingsRef = useRef(settings);
@@ -146,15 +156,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const newCompletedSessions = prev.completedSessions + 1;
       recordFocusCompletion(prev.durationMs);
       
-      return {
-        ...prev,
-        phase: 'done',
-        startedAt: null,
-        pausedAt: null,
-        completedSessions: newCompletedSessions,
-      };
+      // Check if app is in foreground
+      const isForeground = isAppForeground();
+      
+      if (isForeground) {
+        // Foreground: go to done, wait for play (chime handled by TimerScreen phase change)
+        return {
+          ...prev,
+          phase: 'done',
+          startedAt: null,
+          pausedAt: null,
+          completedSessions: newCompletedSessions,
+        };
+      } else {
+        // Background: auto-start break, trigger chime
+        setPendingChime(true);
+        return transitionToBreak(newCompletedSessions, s);
+      }
     }
     
+    // Break/long break completed
     return {
       phase: 'idle',
       durationMs: s.focusDuration * 60 * 1000,
@@ -162,7 +183,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       pausedAt: null,
       completedSessions: prev.completedSessions,
     };
-  }, [recordFocusCompletion]);
+  }, [recordFocusCompletion, transitionToBreak]);
 
   const checkAndHandleCompletion = useCallback((state: TimerState, s: Settings): TimerState | null => {
     if (state.phase === 'idle' || state.phase === 'done') return null;
@@ -432,6 +453,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setTimerState(prev => transitionToBreak(prev.completedSessions, settingsRef.current));
   }, [transitionToBreak]);
 
+  const clearPendingChime = useCallback(() => {
+    setPendingChime(false);
+  }, []);
+
   const getSessionsForDate = useCallback((date: string): { count: number; totalMs: number } => {
     const matching = sessions.filter(s => s.date === date);
     return {
@@ -458,6 +483,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         sessions,
         remainingMs,
         isRunning,
+        pendingChime,
         updateSettings,
         t,
         startTimer,
@@ -465,6 +491,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         skipBreak,
         resetTimer,
         acknowledgeComplete,
+        clearPendingChime,
         getSessionsForDate,
         getTotalStats,
       }}
