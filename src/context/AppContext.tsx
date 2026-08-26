@@ -77,14 +77,9 @@ const getLocalDateString = (date: Date = new Date()): string => {
   return `${year}-${month}-${day}`;
 };
 
-const AppContext = createContext<AppContextType | undefined>(undefined);
+const FOREGROUND_FRESH_THRESHOLD_MS = 300;
 
-const isAppForeground = (): boolean => {
-  if (Platform.OS === 'web') {
-    return typeof document !== 'undefined' && document.visibilityState === 'visible';
-  }
-  return AppState.currentState === 'active';
-};
+const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [settings, setSettings] = useState<Settings>(defaultSettings);
@@ -102,15 +97,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const settingsRef = useRef(settings);
+  const lastForegroundAtRef = useRef<number>(Date.now());
   settingsRef.current = settings;
 
-  const getDurationMs = useCallback((phase: TimerPhase, s: Settings): number => {
-    switch (phase) {
-      case 'focus': return s.focusDuration * 60 * 1000;
-      case 'break': return s.breakDuration * 60 * 1000;
-      case 'longBreak': return s.longBreakDuration * 60 * 1000;
-      default: return s.focusDuration * 60 * 1000;
-    }
+  const markForeground = useCallback(() => {
+    lastForegroundAtRef.current = Date.now();
+  }, []);
+
+  const markBackground = useCallback(() => {
+    lastForegroundAtRef.current = 0;
+  }, []);
+
+  const isForegroundFresh = useCallback((): boolean => {
+    return Date.now() - lastForegroundAtRef.current <= FOREGROUND_FRESH_THRESHOLD_MS;
   }, []);
 
   const computeRemaining = useCallback((state: TimerState): number => {
@@ -151,31 +150,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   }, []);
 
-  const handleTimerComplete = useCallback((prev: TimerState, s: Settings): TimerState => {
-    if (prev.phase === 'focus') {
-      const newCompletedSessions = prev.completedSessions + 1;
-      recordFocusCompletion(prev.durationMs);
-      
-      // Check if app is in foreground
-      const isForeground = isAppForeground();
-      
-      if (isForeground) {
-        // Foreground: go to done, wait for play (chime handled by TimerScreen phase change)
-        return {
-          ...prev,
-          phase: 'done',
-          startedAt: null,
-          pausedAt: null,
-          completedSessions: newCompletedSessions,
-        };
-      } else {
-        // Background: auto-start break, trigger chime
-        setPendingChime(true);
-        return transitionToBreak(newCompletedSessions, s);
-      }
+  const handleFocusComplete = useCallback((prev: TimerState, s: Settings, forceBreak: boolean): TimerState => {
+    const newCompletedSessions = prev.completedSessions + 1;
+    recordFocusCompletion(prev.durationMs);
+    
+    if (forceBreak || !isForegroundFresh()) {
+      setPendingChime(true);
+      return transitionToBreak(newCompletedSessions, s);
     }
     
-    // Break/long break completed
+    return {
+      ...prev,
+      phase: 'done',
+      startedAt: null,
+      pausedAt: null,
+      completedSessions: newCompletedSessions,
+    };
+  }, [recordFocusCompletion, transitionToBreak, isForegroundFresh]);
+
+  const handleTimerComplete = useCallback((prev: TimerState, s: Settings): TimerState => {
+    if (prev.phase === 'focus') {
+      return handleFocusComplete(prev, s, false);
+    }
+    
     return {
       phase: 'idle',
       durationMs: s.focusDuration * 60 * 1000,
@@ -183,7 +180,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       pausedAt: null,
       completedSessions: prev.completedSessions,
     };
-  }, [recordFocusCompletion, transitionToBreak]);
+  }, [handleFocusComplete]);
 
   const checkAndHandleCompletion = useCallback((state: TimerState, s: Settings): TimerState | null => {
     if (state.phase === 'idle' || state.phase === 'done') return null;
@@ -197,6 +194,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (state.phase === 'focus') {
         const newCompletedSessions = state.completedSessions + 1;
         recordFocusCompletion(state.durationMs);
+        setPendingChime(true);
         return transitionToBreak(newCompletedSessions, s);
       } else {
         return {
@@ -213,38 +211,84 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   useEffect(() => {
     loadData();
+    markForeground();
   }, []);
 
   useEffect(() => {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
       if (nextAppState === 'active') {
+        markForeground();
         setTimerState(prev => {
           const newState = checkAndHandleCompletion(prev, settingsRef.current);
           return newState || prev;
         });
+      } else {
+        markBackground();
       }
     };
 
     const subscription = AppState.addEventListener('change', handleAppStateChange);
     
-    if (Platform.OS === 'web') {
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const handleVisible = () => {
+        markForeground();
+        setTimerState(prev => {
+          const newState = checkAndHandleCompletion(prev, settingsRef.current);
+          return newState || prev;
+        });
+      };
+      
+      const handleHidden = () => {
+        markBackground();
+      };
+      
       const handleVisibilityChange = () => {
         if (document.visibilityState === 'visible') {
-          setTimerState(prev => {
-            const newState = checkAndHandleCompletion(prev, settingsRef.current);
-            return newState || prev;
-          });
+          handleVisible();
+        } else {
+          handleHidden();
         }
       };
+      
+      const handleFocus = () => {
+        markForeground();
+      };
+      
+      const handleBlur = () => {
+        markBackground();
+      };
+      
+      const handlePageHide = () => {
+        markBackground();
+      };
+      
+      const handleFreeze = () => {
+        markBackground();
+      };
+      
       document.addEventListener('visibilitychange', handleVisibilityChange);
+      window.addEventListener('focus', handleFocus);
+      window.addEventListener('blur', handleBlur);
+      window.addEventListener('pagehide', handlePageHide);
+      
+      if ('onfreeze' in document) {
+        (document as any).addEventListener('freeze', handleFreeze);
+      }
+      
       return () => {
         subscription.remove();
         document.removeEventListener('visibilitychange', handleVisibilityChange);
+        window.removeEventListener('focus', handleFocus);
+        window.removeEventListener('blur', handleBlur);
+        window.removeEventListener('pagehide', handlePageHide);
+        if ('onfreeze' in document) {
+          (document as any).removeEventListener('freeze', handleFreeze);
+        }
       };
     }
     
     return () => subscription.remove();
-  }, [checkAndHandleCompletion]);
+  }, [checkAndHandleCompletion, markForeground, markBackground]);
 
   useEffect(() => {
     if (isLoaded) {
@@ -268,6 +312,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (isRunning) {
       intervalRef.current = setInterval(() => {
         setTick(t => t + 1);
+        
+        if (isForegroundFresh()) {
+          markForeground();
+        }
         
         setTimerState(prev => {
           if (prev.startedAt === null || prev.pausedAt !== null) return prev;
@@ -294,7 +342,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         intervalRef.current = null;
       }
     };
-  }, [isRunning, handleTimerComplete]);
+  }, [isRunning, handleTimerComplete, isForegroundFresh, markForeground]);
 
   const loadData = async () => {
     try {
