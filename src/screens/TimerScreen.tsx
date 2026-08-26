@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Pressable } from 'react-native';
 import { Audio } from 'expo-av';
-import Svg, { Path, Circle } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 import { useApp } from '../context/AppContext';
 import { themes } from '../utils/theme';
 import { IdleCat, FocusCat, BreakCat, DoneCat } from '../components/cats';
@@ -11,6 +11,8 @@ export const TimerScreen: React.FC = () => {
   const {
     settings,
     timerState,
+    remainingMs,
+    isRunning,
     t,
     startTimer,
     pauseTimer,
@@ -37,7 +39,7 @@ export const TimerScreen: React.FC = () => {
 
   useEffect(() => {
     handleNoiseChange();
-  }, [settings.noise, timerState.isRunning]);
+  }, [settings.noise, isRunning]);
 
   useEffect(() => {
     if (prevPhaseRef.current !== 'done' && timerState.phase === 'done') {
@@ -57,12 +59,12 @@ export const TimerScreen: React.FC = () => {
       soundRef.current = null;
     }
 
-    if (settings.noise !== 'off' && timerState.isRunning) {
+    if (settings.noise !== 'off' && isRunning) {
       try {
         const soundFiles: Record<string, any> = {
-          rain: require('../../assets/sounds/rain.mp3'),
-          night: require('../../assets/sounds/night.mp3'),
-          purr: require('../../assets/sounds/purr.mp3'),
+          rain: require('../../assets/sounds/rain.wav'),
+          night: require('../../assets/sounds/night.wav'),
+          purr: require('../../assets/sounds/purr.wav'),
         };
         
         const { sound } = await Audio.Sound.createAsync(
@@ -83,7 +85,7 @@ export const TimerScreen: React.FC = () => {
         await chimeRef.current.unloadAsync();
       }
       const { sound } = await Audio.Sound.createAsync(
-        require('../../assets/sounds/chime.mp3'),
+        require('../../assets/sounds/chime.wav'),
         { volume: 0.3 }
       );
       chimeRef.current = sound;
@@ -109,7 +111,7 @@ export const TimerScreen: React.FC = () => {
       case 'longBreak':
         return t('longBreak');
       case 'done':
-        return t('focus');
+        return t('done');
       default:
         return t('focus');
     }
@@ -133,7 +135,7 @@ export const TimerScreen: React.FC = () => {
   const handlePlayPause = () => {
     if (timerState.phase === 'done') {
       acknowledgeComplete();
-    } else if (timerState.isRunning) {
+    } else if (isRunning) {
       pauseTimer();
     } else {
       startTimer();
@@ -147,47 +149,29 @@ export const TimerScreen: React.FC = () => {
     updateSettings({ noise: noises[nextIndex] });
   };
 
-  const getNoiseIcon = () => {
-    if (settings.noise === 'off') return null;
-    
-    return (
-      <Svg width={20} height={20} viewBox="0 0 24 24">
-        <Path
-          d="M12 3v18M8 8v8M4 10v4M16 8v8M20 10v4"
-          stroke={theme.textSecondary}
-          strokeWidth={2}
-          strokeLinecap="round"
-        />
-      </Svg>
-    );
-  };
-
   const isBreak = timerState.phase === 'break' || timerState.phase === 'longBreak';
+  const noiseActive = settings.noise !== 'off';
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      {/* Noise toggle */}
+      {/* Noise toggle - icon only, no word when off */}
       <TouchableOpacity style={styles.noiseButton} onPress={cycleNoise}>
-        {settings.noise !== 'off' ? (
-          <View style={styles.noiseActive}>
-            {getNoiseIcon()}
-          </View>
-        ) : (
-          <Svg width={20} height={20} viewBox="0 0 24 24">
-            <Path
-              d="M12 3v18M8 8v8M4 10v4M16 8v8M20 10v4"
-              stroke={theme.border}
-              strokeWidth={2}
-              strokeLinecap="round"
-            />
+        <Svg width={20} height={20} viewBox="0 0 24 24">
+          <Path
+            d="M12 3v18M8 8v8M4 10v4M16 8v8M20 10v4"
+            stroke={noiseActive ? theme.textSecondary : theme.border}
+            strokeWidth={2}
+            strokeLinecap="round"
+          />
+          {!noiseActive && (
             <Path
               d="M3 3l18 18"
               stroke={theme.border}
               strokeWidth={2}
               strokeLinecap="round"
             />
-          </Svg>
-        )}
+          )}
+        </Svg>
       </TouchableOpacity>
 
       {/* Phase indicator */}
@@ -200,7 +184,7 @@ export const TimerScreen: React.FC = () => {
 
       {/* Timer display */}
       <Text style={[styles.timerText, { color: theme.text }]}>
-        {formatTime(timerState.remainingMs)}
+        {formatTime(remainingMs)}
       </Text>
 
       {/* Session dots */}
@@ -232,7 +216,7 @@ export const TimerScreen: React.FC = () => {
           style={[styles.playButton, { backgroundColor: theme.surface }]}
           onPress={handlePlayPause}
         >
-          {timerState.isRunning ? (
+          {isRunning ? (
             <Svg width={32} height={32} viewBox="0 0 24 24">
               <Path d="M6 4h4v16H6zM14 4h4v16h-4z" fill={theme.text} />
             </Svg>
@@ -259,9 +243,6 @@ const styles = StyleSheet.create({
     top: 60,
     right: 24,
     padding: 8,
-  },
-  noiseActive: {
-    opacity: 0.8,
   },
   phaseContainer: {
     flexDirection: 'row',

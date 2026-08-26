@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import Svg, { Path, Circle, Rect } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 import { useApp, NoiseType } from '../context/AppContext';
 import { themes } from '../utils/theme';
 
@@ -67,7 +67,6 @@ export const ProfileScreen: React.FC = () => {
   );
 
   const noiseOptions: { key: NoiseType; label: string }[] = [
-    { key: 'off', label: t('off') },
     { key: 'rain', label: t('rain') },
     { key: 'night', label: t('night') },
     { key: 'purr', label: t('purr') },
@@ -78,13 +77,13 @@ export const ProfileScreen: React.FC = () => {
       style={[styles.container, { backgroundColor: theme.background }]}
       contentContainerStyle={styles.content}
     >
-      <Text style={[styles.title, { color: theme.text }]}>{t('settings')}</Text>
+      <Text style={[styles.title, { color: theme.text }]}>{t('profile')}</Text>
 
-      {/* Duration Settings */}
+      {/* Duration Settings - labels without "duration" word */}
       <View style={[styles.section, { backgroundColor: theme.surface }]}>
         <View style={styles.settingRow}>
           <Text style={[styles.settingLabel, { color: theme.text }]}>
-            {t('focusDuration')}
+            {t('focusLabel')}
           </Text>
           <Stepper
             value={settings.focusDuration}
@@ -97,7 +96,7 @@ export const ProfileScreen: React.FC = () => {
 
         <View style={styles.settingRow}>
           <Text style={[styles.settingLabel, { color: theme.text }]}>
-            {t('breakDuration')}
+            {t('breakLabel')}
           </Text>
           <Stepper
             value={settings.breakDuration}
@@ -110,7 +109,7 @@ export const ProfileScreen: React.FC = () => {
 
         <View style={styles.settingRow}>
           <Text style={[styles.settingLabel, { color: theme.text }]}>
-            {t('longBreakDuration')}
+            {t('longBreakLabel')}
           </Text>
           <Stepper
             value={settings.longBreakDuration}
@@ -120,7 +119,7 @@ export const ProfileScreen: React.FC = () => {
         </View>
       </View>
 
-      {/* Sound Settings */}
+      {/* Sound Settings - Off is icon only on timer, here show all options */}
       <View style={[styles.section, { backgroundColor: theme.surface }]}>
         <Text style={[styles.sectionTitle, { color: theme.text }]}>{t('sounds')}</Text>
         <View style={styles.toggleGroup}>
@@ -129,7 +128,7 @@ export const ProfileScreen: React.FC = () => {
               key={option.key}
               label={option.label}
               isActive={settings.noise === option.key}
-              onPress={() => updateSettings({ noise: option.key })}
+              onPress={() => updateSettings({ noise: settings.noise === option.key ? 'off' : option.key })}
             />
           ))}
         </View>

@@ -6,6 +6,7 @@ export const translations = {
     focus: 'Focus',
     break: 'Break',
     longBreak: 'Long break',
+    done: 'Done',
     
     // Controls
     pause: 'Pause',
@@ -15,13 +16,14 @@ export const translations = {
     // First run
     firstRunTitle: 'Stay.',
     firstRunSubtitle: 'Focus.',
-    getStarted: 'Get Started',
     
-    // Settings
-    settings: 'Settings',
-    focusDuration: 'Focus duration',
-    breakDuration: 'Break duration',
-    longBreakDuration: 'Long break duration',
+    // Profile (not Settings)
+    profile: 'Profile',
+    
+    // Duration labels (no "duration" word)
+    focusLabel: 'Focus',
+    breakLabel: 'Break',
+    longBreakLabel: 'Long break',
     minutes: 'min',
     
     // Sounds
@@ -29,7 +31,6 @@ export const translations = {
     rain: 'Rain',
     night: 'Night',
     purr: 'Purr',
-    off: 'Off',
     
     // Theme
     theme: 'Theme',
@@ -44,13 +45,12 @@ export const translations = {
     // Navigation
     timer: 'Timer',
     calendar: 'Calendar',
-    profile: 'Profile',
     
-    // Calendar
-    today: 'Today',
-    sessions: 'sessions',
-    session: 'session',
-    noSessions: 'No sessions yet',
+    // Calendar stats
+    focused: 'Focused',
+    days: 'days',
+    day: 'day',
+    time: 'Time',
     
     // Days
     sun: 'Sun',
@@ -80,6 +80,7 @@ export const translations = {
     focus: 'Focus',
     break: 'Pause',
     longBreak: 'Pause longue',
+    done: 'Terminé',
     
     // Controls
     pause: 'Pause',
@@ -89,13 +90,14 @@ export const translations = {
     // First run
     firstRunTitle: 'Reste.',
     firstRunSubtitle: 'Concentre-toi.',
-    getStarted: 'Commencer',
     
-    // Settings
-    settings: 'Paramètres',
-    focusDuration: 'Durée focus',
-    breakDuration: 'Durée pause',
-    longBreakDuration: 'Durée pause longue',
+    // Profile (not Settings)
+    profile: 'Profil',
+    
+    // Duration labels (no "duration" word)
+    focusLabel: 'Focus',
+    breakLabel: 'Pause',
+    longBreakLabel: 'Pause longue',
     minutes: 'min',
     
     // Sounds
@@ -103,7 +105,6 @@ export const translations = {
     rain: 'Pluie',
     night: 'Nuit',
     purr: 'Ronron',
-    off: 'Off',
     
     // Theme
     theme: 'Thème',
@@ -118,13 +119,12 @@ export const translations = {
     // Navigation
     timer: 'Timer',
     calendar: 'Calendrier',
-    profile: 'Profil',
     
-    // Calendar
-    today: "Aujourd'hui",
-    sessions: 'sessions',
-    session: 'session',
-    noSessions: 'Pas encore de sessions',
+    // Calendar stats
+    focused: 'Jours',
+    days: 'jours',
+    day: 'jour',
+    time: 'Temps',
     
     // Days
     sun: 'Dim',

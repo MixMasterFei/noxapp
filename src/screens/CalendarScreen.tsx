@@ -1,12 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { useApp } from '../context/AppContext';
+import { useApp, getLocalDateString } from '../context/AppContext';
 import { themes } from '../utils/theme';
 import { PawStamp } from '../components/PawStamp';
 
 export const CalendarScreen: React.FC = () => {
-  const { settings, t, getSessionsForDate } = useApp();
+  const { settings, t, getSessionsForDate, getTotalStats } = useApp();
   const theme = themes[settings.theme];
   
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -18,6 +18,17 @@ export const CalendarScreen: React.FC = () => {
   ];
 
   const dayNames = [t('sun'), t('mon'), t('tue'), t('wed'), t('thu'), t('fri'), t('sat')];
+
+  const formatDuration = (ms: number): string => {
+    const totalMinutes = Math.floor(ms / 60000);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    
+    if (hours > 0) {
+      return `${hours}h ${minutes}m`;
+    }
+    return `${minutes}m`;
+  };
 
   const calendarDays = useMemo(() => {
     const year = currentMonth.getFullYear();
@@ -36,7 +47,7 @@ export const CalendarScreen: React.FC = () => {
     
     for (let i = 1; i <= daysInMonth; i++) {
       const date = new Date(year, month, i);
-      const dateString = date.toISOString().split('T')[0];
+      const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
       days.push({ date, dateString });
     }
     
@@ -55,20 +66,12 @@ export const CalendarScreen: React.FC = () => {
     setCurrentMonth(new Date());
   };
 
-  const isToday = (date: Date | null): boolean => {
-    if (!date) return false;
-    const today = new Date();
-    return date.toDateString() === today.toDateString();
+  const isToday = (dateString: string | null): boolean => {
+    if (!dateString) return false;
+    return dateString === getLocalDateString();
   };
 
-  const totalSessionsThisMonth = useMemo(() => {
-    return calendarDays.reduce((total, day) => {
-      if (day.dateString) {
-        return total + getSessionsForDate(day.dateString);
-      }
-      return total;
-    }, 0);
-  }, [calendarDays, getSessionsForDate]);
+  const { days: totalDays, totalMs } = getTotalStats();
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -93,12 +96,26 @@ export const CalendarScreen: React.FC = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Summary */}
-      <View style={[styles.summaryCard, { backgroundColor: theme.surface }]}>
-        <View style={styles.summaryContent}>
-          <PawStamp size={32} color={theme.accent} />
-          <Text style={[styles.summaryText, { color: theme.text }]}>
-            {totalSessionsThisMonth} {totalSessionsThisMonth === 1 ? t('session') : t('sessions')}
+      {/* Stats Summary */}
+      <View style={styles.statsContainer}>
+        <View style={[styles.statCard, { backgroundColor: theme.surface }]}>
+          <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
+            {t('focused')}
+          </Text>
+          <View style={styles.statRow}>
+            <PawStamp size={20} color={theme.accent} />
+            <Text style={[styles.statValue, { color: theme.text }]}>
+              {totalDays} {totalDays === 1 ? t('day') : t('days')}
+            </Text>
+          </View>
+        </View>
+        
+        <View style={[styles.statCard, { backgroundColor: theme.surface }]}>
+          <Text style={[styles.statLabel, { color: theme.textSecondary }]}>
+            {t('time')}
+          </Text>
+          <Text style={[styles.statValue, { color: theme.text }]}>
+            {formatDuration(totalMs)}
           </Text>
         </View>
       </View>
@@ -119,12 +136,12 @@ export const CalendarScreen: React.FC = () => {
       <ScrollView style={styles.calendarScroll} showsVerticalScrollIndicator={false}>
         <View style={styles.calendarGrid}>
           {calendarDays.map((day, index) => {
-            const sessions = day.dateString ? getSessionsForDate(day.dateString) : 0;
-            const isTodayDate = isToday(day.date);
+            const sessionData = day.dateString ? getSessionsForDate(day.dateString) : { count: 0, totalMs: 0 };
+            const isTodayDate = isToday(day.dateString);
             
             return (
               <View 
-                key={index} 
+                key={day.dateString || `empty-${index}`} 
                 style={[
                   styles.dayCell,
                   isTodayDate && [styles.todayCell, { borderColor: theme.accent }],
@@ -140,12 +157,12 @@ export const CalendarScreen: React.FC = () => {
                     >
                       {day.date.getDate()}
                     </Text>
-                    {sessions > 0 && (
+                    {sessionData.count > 0 && (
                       <View style={styles.pawContainer}>
                         <PawStamp size={18} color={theme.accent} />
-                        {sessions > 1 && (
+                        {sessionData.count > 1 && (
                           <Text style={[styles.sessionCount, { color: theme.textSecondary }]}>
-                            {sessions}
+                            {sessionData.count}
                           </Text>
                         )}
                       </View>
@@ -172,7 +189,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 8,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   navButton: {
     padding: 8,
@@ -181,20 +198,31 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '600',
   },
-  summaryCard: {
-    borderRadius: 16,
-    padding: 16,
+  statsContainer: {
+    flexDirection: 'row',
+    gap: 12,
     marginBottom: 20,
   },
-  summaryContent: {
+  statCard: {
+    flex: 1,
+    borderRadius: 12,
+    padding: 12,
+  },
+  statLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  statRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
+    gap: 6,
   },
-  summaryText: {
-    fontSize: 18,
-    fontWeight: '500',
+  statValue: {
+    fontSize: 16,
+    fontWeight: '600',
   },
   dayHeaders: {
     flexDirection: 'row',

@@ -10,19 +10,23 @@ export const FirstRunScreen: React.FC = () => {
   const { settings, updateSettings, t } = useApp();
   const theme = themes[settings.theme];
 
-  const handleGetStarted = () => {
+  const handleTapCat = () => {
     updateSettings({ hasSeenFirstRun: true });
   };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={styles.content}>
-        {/* Cat illustration */}
-        <View style={styles.catContainer}>
+        {/* Tap the cat to continue */}
+        <TouchableOpacity 
+          style={styles.catContainer} 
+          onPress={handleTapCat}
+          activeOpacity={0.8}
+        >
           <IdleCat width={width * 0.6} height={width * 0.72} />
-        </View>
+        </TouchableOpacity>
 
-        {/* Title */}
+        {/* Title - only "Stay. Focus." / "Reste. Concentre-toi." */}
         <View style={styles.titleContainer}>
           <Text style={[styles.title, { color: theme.text }]}>
             {t('firstRunTitle')}
@@ -32,14 +36,6 @@ export const FirstRunScreen: React.FC = () => {
           </Text>
         </View>
       </View>
-
-      {/* Get Started button */}
-      <TouchableOpacity
-        style={[styles.button, { backgroundColor: theme.accent }]}
-        onPress={handleGetStarted}
-      >
-        <Text style={styles.buttonText}>{t('getStarted')}</Text>
-      </TouchableOpacity>
     </View>
   );
 };
@@ -47,7 +43,7 @@ export const FirstRunScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     paddingVertical: 80,
     paddingHorizontal: 32,
   },
@@ -72,15 +68,5 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 2,
     marginTop: -4,
-  },
-  button: {
-    paddingVertical: 18,
-    borderRadius: 32,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: '#1A1A1A',
-    fontSize: 18,
-    fontWeight: '600',
   },
 });

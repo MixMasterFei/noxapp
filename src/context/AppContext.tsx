@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import { AppState, AppStateStatus, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Language, translations, TranslationKey } from '../i18n/translations';
 
@@ -18,22 +19,31 @@ interface Settings {
 
 interface Session {
   date: string;
-  count: number;
+  durationMs: number;
 }
 
 interface TimerState {
   phase: TimerPhase;
-  remainingMs: number;
-  isRunning: boolean;
-  completedSessions: number;
-  startTime: number | null;
+  durationMs: number;
+  startedAt: number | null;
   pausedAt: number | null;
+  completedSessions: number;
+}
+
+interface PersistedTimerState {
+  phase: TimerPhase;
+  durationMs: number;
+  startedAt: number | null;
+  pausedAt: number | null;
+  completedSessions: number;
 }
 
 interface AppContextType {
   settings: Settings;
   timerState: TimerState;
   sessions: Session[];
+  remainingMs: number;
+  isRunning: boolean;
   
   updateSettings: (partial: Partial<Settings>) => void;
   t: (key: TranslationKey) => string;
@@ -44,7 +54,8 @@ interface AppContextType {
   resetTimer: () => void;
   acknowledgeComplete: () => void;
   
-  getSessionsForDate: (date: string) => number;
+  getSessionsForDate: (date: string) => { count: number; totalMs: number };
+  getTotalStats: () => { days: number; totalMs: number };
 }
 
 const defaultSettings: Settings = {
@@ -57,28 +68,162 @@ const defaultSettings: Settings = {
   hasSeenFirstRun: false,
 };
 
-const defaultTimerState: TimerState = {
-  phase: 'idle',
-  remainingMs: 25 * 60 * 1000,
-  isRunning: false,
-  completedSessions: 0,
-  startTime: null,
-  pausedAt: null,
+const getLocalDateString = (date: Date = new Date()): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [settings, setSettings] = useState<Settings>(defaultSettings);
-  const [timerState, setTimerState] = useState<TimerState>(defaultTimerState);
+  const [timerState, setTimerState] = useState<TimerState>({
+    phase: 'idle',
+    durationMs: 25 * 60 * 1000,
+    startedAt: null,
+    pausedAt: null,
+    completedSessions: 0,
+  });
   const [sessions, setSessions] = useState<Session[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [tick, setTick] = useState(0);
   
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
+
+  const getDurationMs = useCallback((phase: TimerPhase, s: Settings): number => {
+    switch (phase) {
+      case 'focus': return s.focusDuration * 60 * 1000;
+      case 'break': return s.breakDuration * 60 * 1000;
+      case 'longBreak': return s.longBreakDuration * 60 * 1000;
+      default: return s.focusDuration * 60 * 1000;
+    }
+  }, []);
+
+  const computeRemaining = useCallback((state: TimerState): number => {
+    if (state.phase === 'idle' || state.phase === 'done') {
+      return state.durationMs;
+    }
+    if (state.pausedAt !== null && state.startedAt !== null) {
+      const elapsed = state.pausedAt - state.startedAt;
+      return Math.max(0, state.durationMs - elapsed);
+    }
+    if (state.startedAt !== null) {
+      const elapsed = Date.now() - state.startedAt;
+      return Math.max(0, state.durationMs - elapsed);
+    }
+    return state.durationMs;
+  }, []);
+
+  const isRunning = timerState.startedAt !== null && timerState.pausedAt === null && 
+                    timerState.phase !== 'idle' && timerState.phase !== 'done';
+  const remainingMs = computeRemaining(timerState);
+
+  const recordFocusCompletion = useCallback((durationMs: number) => {
+    const localDate = getLocalDateString();
+    setSessions(prev => [...prev, { date: localDate, durationMs }]);
+  }, []);
+
+  const transitionToBreak = useCallback((completedSessions: number, s: Settings): TimerState => {
+    const isLongBreak = completedSessions % 4 === 0 && completedSessions > 0;
+    const nextPhase = isLongBreak ? 'longBreak' : 'break';
+    const duration = isLongBreak ? s.longBreakDuration * 60 * 1000 : s.breakDuration * 60 * 1000;
+    
+    return {
+      phase: nextPhase,
+      durationMs: duration,
+      startedAt: Date.now(),
+      pausedAt: null,
+      completedSessions,
+    };
+  }, []);
+
+  const handleTimerComplete = useCallback((prev: TimerState, s: Settings): TimerState => {
+    if (prev.phase === 'focus') {
+      const newCompletedSessions = prev.completedSessions + 1;
+      recordFocusCompletion(prev.durationMs);
+      
+      return {
+        ...prev,
+        phase: 'done',
+        startedAt: null,
+        pausedAt: null,
+        completedSessions: newCompletedSessions,
+      };
+    }
+    
+    return {
+      phase: 'idle',
+      durationMs: s.focusDuration * 60 * 1000,
+      startedAt: null,
+      pausedAt: null,
+      completedSessions: prev.completedSessions,
+    };
+  }, [recordFocusCompletion]);
+
+  const checkAndHandleCompletion = useCallback((state: TimerState, s: Settings): TimerState | null => {
+    if (state.phase === 'idle' || state.phase === 'done') return null;
+    if (state.startedAt === null) return null;
+    
+    const now = Date.now();
+    const elapsed = state.pausedAt !== null ? state.pausedAt - state.startedAt : now - state.startedAt;
+    const remaining = state.durationMs - elapsed;
+    
+    if (remaining <= 0) {
+      if (state.phase === 'focus') {
+        const newCompletedSessions = state.completedSessions + 1;
+        recordFocusCompletion(state.durationMs);
+        return transitionToBreak(newCompletedSessions, s);
+      } else {
+        return {
+          phase: 'idle',
+          durationMs: s.focusDuration * 60 * 1000,
+          startedAt: null,
+          pausedAt: null,
+          completedSessions: state.completedSessions,
+        };
+      }
+    }
+    return null;
+  }, [recordFocusCompletion, transitionToBreak]);
 
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'active') {
+        setTimerState(prev => {
+          const newState = checkAndHandleCompletion(prev, settingsRef.current);
+          return newState || prev;
+        });
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    
+    if (Platform.OS === 'web') {
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === 'visible') {
+          setTimerState(prev => {
+            const newState = checkAndHandleCompletion(prev, settingsRef.current);
+            return newState || prev;
+          });
+        }
+      };
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      return () => {
+        subscription.remove();
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      };
+    }
+    
+    return () => subscription.remove();
+  }, [checkAndHandleCompletion]);
 
   useEffect(() => {
     if (isLoaded) {
@@ -93,24 +238,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [sessions, isLoaded]);
 
   useEffect(() => {
-    if (timerState.isRunning && timerState.startTime) {
+    if (isLoaded) {
+      saveTimerState();
+    }
+  }, [timerState, isLoaded]);
+
+  useEffect(() => {
+    if (isRunning) {
       intervalRef.current = setInterval(() => {
+        setTick(t => t + 1);
+        
         setTimerState(prev => {
-          if (!prev.isRunning || !prev.startTime) return prev;
+          if (prev.startedAt === null || prev.pausedAt !== null) return prev;
           
-          const elapsed = Date.now() - prev.startTime;
-          const durationMs = getDurationMs(prev.phase, settings);
-          const remaining = Math.max(0, durationMs - elapsed);
+          const elapsed = Date.now() - prev.startedAt;
+          const remaining = prev.durationMs - elapsed;
           
-          if (remaining === 0) {
+          if (remaining <= 0) {
             if (intervalRef.current) {
               clearInterval(intervalRef.current);
               intervalRef.current = null;
             }
-            return handleTimerComplete(prev);
+            return handleTimerComplete(prev, settingsRef.current);
           }
           
-          return { ...prev, remainingMs: remaining };
+          return prev;
         });
       }, 100);
     }
@@ -121,74 +273,51 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         intervalRef.current = null;
       }
     };
-  }, [timerState.isRunning, timerState.startTime, settings]);
-
-  const getDurationMs = (phase: TimerPhase, s: Settings): number => {
-    switch (phase) {
-      case 'focus':
-        return s.focusDuration * 60 * 1000;
-      case 'break':
-        return s.breakDuration * 60 * 1000;
-      case 'longBreak':
-        return s.longBreakDuration * 60 * 1000;
-      default:
-        return s.focusDuration * 60 * 1000;
-    }
-  };
-
-  const handleTimerComplete = (prev: TimerState): TimerState => {
-    if (prev.phase === 'focus') {
-      const newCompletedSessions = prev.completedSessions + 1;
-      const today = new Date().toISOString().split('T')[0];
-      
-      setSessions(currentSessions => {
-        const existing = currentSessions.find(s => s.date === today);
-        if (existing) {
-          return currentSessions.map(s => 
-            s.date === today ? { ...s, count: s.count + 1 } : s
-          );
-        }
-        return [...currentSessions, { date: today, count: 1 }];
-      });
-      
-      return {
-        ...prev,
-        phase: 'done',
-        remainingMs: 0,
-        isRunning: false,
-        completedSessions: newCompletedSessions,
-        startTime: null,
-      };
-    }
-    
-    return {
-      ...prev,
-      phase: 'idle',
-      remainingMs: settings.focusDuration * 60 * 1000,
-      isRunning: false,
-      completedSessions: prev.completedSessions,
-      startTime: null,
-    };
-  };
+  }, [isRunning, handleTimerComplete]);
 
   const loadData = async () => {
     try {
-      const [settingsStr, sessionsStr] = await Promise.all([
+      const [settingsStr, sessionsStr, timerStr] = await Promise.all([
         AsyncStorage.getItem('nox_settings'),
         AsyncStorage.getItem('nox_sessions'),
+        AsyncStorage.getItem('nox_timer'),
       ]);
       
+      let loadedSettings = defaultSettings;
       if (settingsStr) {
-        const loaded = JSON.parse(settingsStr);
-        setSettings({ ...defaultSettings, ...loaded });
-        setTimerState(prev => ({
-          ...prev,
-          remainingMs: (loaded.focusDuration || 25) * 60 * 1000,
-        }));
+        loadedSettings = { ...defaultSettings, ...JSON.parse(settingsStr) };
+        setSettings(loadedSettings);
       }
       
       if (sessionsStr) {
-        setSessions(JSON.parse(sessionsStr));
+        const parsed = JSON.parse(sessionsStr);
+        if (Array.isArray(parsed)) {
+          const migrated = parsed.map((s: any) => {
+            if (typeof s.count === 'number' && s.durationMs === undefined) {
+              return { date: s.date, durationMs: s.count * 25 * 60 * 1000 };
+            }
+            return s;
+          });
+          setSessions(migrated);
+        }
+      }
+      
+      if (timerStr) {
+        const savedTimer: PersistedTimerState = JSON.parse(timerStr);
+        const newState = checkAndHandleCompletion(savedTimer, loadedSettings);
+        if (newState) {
+          setTimerState(newState);
+        } else {
+          setTimerState(savedTimer);
+        }
+      } else {
+        setTimerState({
+          phase: 'idle',
+          durationMs: loadedSettings.focusDuration * 60 * 1000,
+          startedAt: null,
+          pausedAt: null,
+          completedSessions: 0,
+        });
       }
     } catch (e) {
       console.error('Failed to load data:', e);
@@ -213,20 +342,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const saveTimerState = async () => {
+    try {
+      await AsyncStorage.setItem('nox_timer', JSON.stringify(timerState));
+    } catch (e) {
+      console.error('Failed to save timer state:', e);
+    }
+  };
+
   const updateSettings = useCallback((partial: Partial<Settings>) => {
     setSettings(prev => {
       const updated = { ...prev, ...partial };
       
-      if (partial.focusDuration !== undefined && timerState.phase === 'idle') {
-        setTimerState(ts => ({
-          ...ts,
-          remainingMs: partial.focusDuration! * 60 * 1000,
-        }));
+      if (partial.focusDuration !== undefined) {
+        setTimerState(ts => {
+          if (ts.phase === 'idle') {
+            return { ...ts, durationMs: partial.focusDuration! * 60 * 1000 };
+          }
+          return ts;
+        });
       }
       
       return updated;
     });
-  }, [timerState.phase]);
+  }, []);
 
   const t = useCallback((key: TranslationKey): string => {
     return translations[settings.language][key] || key;
@@ -236,38 +375,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setTimerState(prev => {
       if (prev.phase === 'idle' || prev.phase === 'done') {
         return {
-          ...prev,
           phase: 'focus',
-          remainingMs: settings.focusDuration * 60 * 1000,
-          isRunning: true,
-          startTime: Date.now(),
+          durationMs: settingsRef.current.focusDuration * 60 * 1000,
+          startedAt: Date.now(),
           pausedAt: null,
+          completedSessions: prev.completedSessions,
         };
       }
       
-      if (prev.pausedAt !== null) {
-        const pauseDuration = prev.pausedAt ? Date.now() - prev.pausedAt : 0;
+      if (prev.pausedAt !== null && prev.startedAt !== null) {
+        const pauseDuration = Date.now() - prev.pausedAt;
         return {
           ...prev,
-          isRunning: true,
-          startTime: (prev.startTime || 0) + pauseDuration,
+          startedAt: prev.startedAt + pauseDuration,
           pausedAt: null,
         };
       }
       
-      return {
-        ...prev,
-        isRunning: true,
-        startTime: Date.now(),
-        pausedAt: null,
-      };
+      return prev;
     });
-  }, [settings.focusDuration]);
+  }, []);
 
   const pauseTimer = useCallback(() => {
     setTimerState(prev => ({
       ...prev,
-      isRunning: false,
       pausedAt: Date.now(),
     }));
   }, []);
@@ -276,49 +407,43 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setTimerState(prev => {
       if (prev.phase === 'break' || prev.phase === 'longBreak') {
         return {
-          ...prev,
           phase: 'idle',
-          remainingMs: settings.focusDuration * 60 * 1000,
-          isRunning: false,
-          startTime: null,
+          durationMs: settingsRef.current.focusDuration * 60 * 1000,
+          startedAt: null,
           pausedAt: null,
+          completedSessions: prev.completedSessions,
         };
       }
       return prev;
     });
-  }, [settings.focusDuration]);
+  }, []);
 
   const resetTimer = useCallback(() => {
     setTimerState({
       phase: 'idle',
-      remainingMs: settings.focusDuration * 60 * 1000,
-      isRunning: false,
-      completedSessions: 0,
-      startTime: null,
+      durationMs: settingsRef.current.focusDuration * 60 * 1000,
+      startedAt: null,
       pausedAt: null,
+      completedSessions: 0,
     });
-  }, [settings.focusDuration]);
+  }, []);
 
   const acknowledgeComplete = useCallback(() => {
-    setTimerState(prev => {
-      const isLongBreak = prev.completedSessions % 4 === 0 && prev.completedSessions > 0;
-      const nextPhase = isLongBreak ? 'longBreak' : 'break';
-      const duration = isLongBreak ? settings.longBreakDuration : settings.breakDuration;
-      
-      return {
-        ...prev,
-        phase: nextPhase,
-        remainingMs: duration * 60 * 1000,
-        isRunning: true,
-        startTime: Date.now(),
-        pausedAt: null,
-      };
-    });
-  }, [settings.breakDuration, settings.longBreakDuration]);
+    setTimerState(prev => transitionToBreak(prev.completedSessions, settingsRef.current));
+  }, [transitionToBreak]);
 
-  const getSessionsForDate = useCallback((date: string): number => {
-    const session = sessions.find(s => s.date === date);
-    return session?.count || 0;
+  const getSessionsForDate = useCallback((date: string): { count: number; totalMs: number } => {
+    const matching = sessions.filter(s => s.date === date);
+    return {
+      count: matching.length,
+      totalMs: matching.reduce((sum, s) => sum + s.durationMs, 0),
+    };
+  }, [sessions]);
+
+  const getTotalStats = useCallback((): { days: number; totalMs: number } => {
+    const uniqueDates = new Set(sessions.map(s => s.date));
+    const totalMs = sessions.reduce((sum, s) => sum + s.durationMs, 0);
+    return { days: uniqueDates.size, totalMs };
   }, [sessions]);
 
   if (!isLoaded) {
@@ -331,6 +456,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         settings,
         timerState,
         sessions,
+        remainingMs,
+        isRunning,
         updateSettings,
         t,
         startTimer,
@@ -339,6 +466,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         resetTimer,
         acknowledgeComplete,
         getSessionsForDate,
+        getTotalStats,
       }}
     >
       {children}
@@ -353,3 +481,5 @@ export const useApp = (): AppContextType => {
   }
   return context;
 };
+
+export { getLocalDateString };
