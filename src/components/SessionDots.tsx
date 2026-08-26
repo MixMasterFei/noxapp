@@ -14,22 +14,24 @@ export const SessionDots: React.FC<SessionDotsProps> = ({
   activeColor = '#F5C518',
   inactiveColor = '#333333',
 }) => {
+  const filledCount = completed % total;
+  const allFilled = completed > 0 && filledCount === 0;
+  
   return (
     <View style={styles.container}>
-      {Array.from({ length: total }).map((_, index) => (
-        <View
-          key={index}
-          style={[
-            styles.dot,
-            {
-              backgroundColor: index < (completed % total) || (completed > 0 && completed % total === 0 && index === 0) 
-                ? activeColor 
-                : inactiveColor,
-            },
-            index < (completed % total) && styles.activeDot,
-          ]}
-        />
-      ))}
+      {Array.from({ length: total }).map((_, index) => {
+        const isFilled = allFilled || index < filledCount;
+        return (
+          <View
+            key={index}
+            style={[
+              styles.dot,
+              { backgroundColor: isFilled ? activeColor : inactiveColor },
+              isFilled && styles.activeDot,
+            ]}
+          />
+        );
+      })}
     </View>
   );
 };
