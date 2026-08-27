@@ -77,8 +77,6 @@ const getLocalDateString = (date: Date = new Date()): string => {
   return `${year}-${month}-${day}`;
 };
 
-const FOREGROUND_FRESH_THRESHOLD_MS = 300;
-
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -96,20 +94,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [pendingChime, setPendingChime] = useState(false);
   
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const rafRef = useRef<number | null>(null);
   const settingsRef = useRef(settings);
-  const lastForegroundAtRef = useRef<number>(Date.now());
+  const isBackgroundedRef = useRef<boolean>(false);
   settingsRef.current = settings;
 
   const markForeground = useCallback(() => {
-    lastForegroundAtRef.current = Date.now();
+    isBackgroundedRef.current = false;
   }, []);
 
   const markBackground = useCallback(() => {
-    lastForegroundAtRef.current = 0;
-  }, []);
-
-  const isForegroundFresh = useCallback((): boolean => {
-    return Date.now() - lastForegroundAtRef.current <= FOREGROUND_FRESH_THRESHOLD_MS;
+    isBackgroundedRef.current = true;
   }, []);
 
   const computeRemaining = useCallback((state: TimerState): number => {
@@ -154,11 +149,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const newCompletedSessions = prev.completedSessions + 1;
     recordFocusCompletion(prev.durationMs);
     
-    if (forceBreak || !isForegroundFresh()) {
+    if (forceBreak || isBackgroundedRef.current) {
       setPendingChime(true);
       return transitionToBreak(newCompletedSessions, s);
     }
     
+    setPendingChime(true);
     return {
       ...prev,
       phase: 'done',
@@ -166,7 +162,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       pausedAt: null,
       completedSessions: newCompletedSessions,
     };
-  }, [recordFocusCompletion, transitionToBreak, isForegroundFresh]);
+  }, [recordFocusCompletion, transitionToBreak]);
 
   const handleTimerComplete = useCallback((prev: TimerState, s: Settings): TimerState => {
     if (prev.phase === 'focus') {
@@ -211,13 +207,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   useEffect(() => {
     loadData();
-    markForeground();
   }, []);
 
   useEffect(() => {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
       if (nextAppState === 'active') {
         markForeground();
+        setTick(t => t + 1);
         setTimerState(prev => {
           const newState = checkAndHandleCompletion(prev, settingsRef.current);
           return newState || prev;
@@ -232,6 +228,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
       const handleVisible = () => {
         markForeground();
+        setTick(t => t + 1);
         setTimerState(prev => {
           const newState = checkAndHandleCompletion(prev, settingsRef.current);
           return newState || prev;
@@ -252,6 +249,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       
       const handleFocus = () => {
         markForeground();
+        setTick(t => t + 1);
       };
       
       const handleBlur = () => {
@@ -313,10 +311,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       intervalRef.current = setInterval(() => {
         setTick(t => t + 1);
         
-        if (isForegroundFresh()) {
-          markForeground();
-        }
-        
         setTimerState(prev => {
           if (prev.startedAt === null || prev.pausedAt !== null) return prev;
           
@@ -342,7 +336,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         intervalRef.current = null;
       }
     };
-  }, [isRunning, handleTimerComplete, isForegroundFresh, markForeground]);
+  }, [isRunning, handleTimerComplete]);
+
+  useEffect(() => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && isRunning) {
+      let lastTickSecond = -1;
+      
+      const rafLoop = () => {
+        const currentSecond = Math.floor(Date.now() / 1000);
+        if (currentSecond !== lastTickSecond) {
+          lastTickSecond = currentSecond;
+          setTick(t => t + 1);
+        }
+        rafRef.current = requestAnimationFrame(rafLoop);
+      };
+      
+      rafRef.current = requestAnimationFrame(rafLoop);
+      
+      return () => {
+        if (rafRef.current !== null) {
+          cancelAnimationFrame(rafRef.current);
+          rafRef.current = null;
+        }
+      };
+    }
+  }, [isRunning]);
 
   const loadData = async () => {
     try {
