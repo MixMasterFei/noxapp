@@ -94,6 +94,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [pendingChime, setPendingChime] = useState(false);
   
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const rafRef = useRef<number | null>(null);
   const settingsRef = useRef(settings);
   const isBackgroundedRef = useRef<boolean>(false);
   settingsRef.current = settings;
@@ -212,6 +213,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
       if (nextAppState === 'active') {
         markForeground();
+        setTick(t => t + 1);
         setTimerState(prev => {
           const newState = checkAndHandleCompletion(prev, settingsRef.current);
           return newState || prev;
@@ -226,6 +228,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (Platform.OS === 'web' && typeof window !== 'undefined') {
       const handleVisible = () => {
         markForeground();
+        setTick(t => t + 1);
         setTimerState(prev => {
           const newState = checkAndHandleCompletion(prev, settingsRef.current);
           return newState || prev;
@@ -246,6 +249,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       
       const handleFocus = () => {
         markForeground();
+        setTick(t => t + 1);
       };
       
       const handleBlur = () => {
@@ -333,6 +337,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     };
   }, [isRunning, handleTimerComplete]);
+
+  useEffect(() => {
+    if (Platform.OS === 'web' && typeof window !== 'undefined' && isRunning) {
+      let lastTickSecond = -1;
+      
+      const rafLoop = () => {
+        const currentSecond = Math.floor(Date.now() / 1000);
+        if (currentSecond !== lastTickSecond) {
+          lastTickSecond = currentSecond;
+          setTick(t => t + 1);
+        }
+        rafRef.current = requestAnimationFrame(rafLoop);
+      };
+      
+      rafRef.current = requestAnimationFrame(rafLoop);
+      
+      return () => {
+        if (rafRef.current !== null) {
+          cancelAnimationFrame(rafRef.current);
+          rafRef.current = null;
+        }
+      };
+    }
+  }, [isRunning]);
 
   const loadData = async () => {
     try {
