@@ -77,8 +77,6 @@ const getLocalDateString = (date: Date = new Date()): string => {
   return `${year}-${month}-${day}`;
 };
 
-const FOREGROUND_FRESH_THRESHOLD_MS = 300;
-
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -97,19 +95,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const settingsRef = useRef(settings);
-  const lastForegroundAtRef = useRef<number>(Date.now());
+  const isBackgroundedRef = useRef<boolean>(false);
   settingsRef.current = settings;
 
   const markForeground = useCallback(() => {
-    lastForegroundAtRef.current = Date.now();
+    isBackgroundedRef.current = false;
   }, []);
 
   const markBackground = useCallback(() => {
-    lastForegroundAtRef.current = 0;
-  }, []);
-
-  const isForegroundFresh = useCallback((): boolean => {
-    return Date.now() - lastForegroundAtRef.current <= FOREGROUND_FRESH_THRESHOLD_MS;
+    isBackgroundedRef.current = true;
   }, []);
 
   const computeRemaining = useCallback((state: TimerState): number => {
@@ -154,11 +148,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const newCompletedSessions = prev.completedSessions + 1;
     recordFocusCompletion(prev.durationMs);
     
-    if (forceBreak || !isForegroundFresh()) {
+    if (forceBreak || isBackgroundedRef.current) {
       setPendingChime(true);
       return transitionToBreak(newCompletedSessions, s);
     }
     
+    setPendingChime(true);
     return {
       ...prev,
       phase: 'done',
@@ -166,7 +161,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       pausedAt: null,
       completedSessions: newCompletedSessions,
     };
-  }, [recordFocusCompletion, transitionToBreak, isForegroundFresh]);
+  }, [recordFocusCompletion, transitionToBreak]);
 
   const handleTimerComplete = useCallback((prev: TimerState, s: Settings): TimerState => {
     if (prev.phase === 'focus') {
@@ -211,7 +206,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   useEffect(() => {
     loadData();
-    markForeground();
   }, []);
 
   useEffect(() => {
@@ -313,10 +307,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       intervalRef.current = setInterval(() => {
         setTick(t => t + 1);
         
-        if (isForegroundFresh()) {
-          markForeground();
-        }
-        
         setTimerState(prev => {
           if (prev.startedAt === null || prev.pausedAt !== null) return prev;
           
@@ -342,7 +332,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         intervalRef.current = null;
       }
     };
-  }, [isRunning, handleTimerComplete, isForegroundFresh, markForeground]);
+  }, [isRunning, handleTimerComplete]);
 
   const loadData = async () => {
     try {
