@@ -4,6 +4,7 @@ import { Audio } from 'expo-av';
 import Svg, { Path } from 'react-native-svg';
 import { useApp } from '../context/AppContext';
 import { themes } from '../utils/theme';
+import { useResolvedTheme } from '../utils/useResolvedTheme';
 import { IdleCat, FocusCat, BreakCat, DoneCat } from '../components/cats';
 import { SessionDots } from '../components/SessionDots';
 
@@ -23,7 +24,8 @@ export const TimerScreen: React.FC = () => {
     updateSettings,
   } = useApp();
 
-  const theme = themes[settings.theme];
+  const resolvedTheme = useResolvedTheme(settings.theme);
+  const theme = themes[resolvedTheme];
   const soundRef = useRef<Audio.Sound | null>(null);
   const chimeRef = useRef<Audio.Sound | null>(null);
   const prevPhaseRef = useRef(timerState.phase);

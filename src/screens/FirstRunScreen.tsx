@@ -2,13 +2,15 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { useApp } from '../context/AppContext';
 import { themes } from '../utils/theme';
+import { useResolvedTheme } from '../utils/useResolvedTheme';
 import { IdleCat } from '../components/cats';
 
 const { width } = Dimensions.get('window');
 
 export const FirstRunScreen: React.FC = () => {
   const { settings, updateSettings, t } = useApp();
-  const theme = themes[settings.theme];
+  const resolvedTheme = useResolvedTheme(settings.theme);
+  const theme = themes[resolvedTheme];
 
   const handleTapCat = () => {
     updateSettings({ hasSeenFirstRun: true });

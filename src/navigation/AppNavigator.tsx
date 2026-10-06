@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import { useApp } from '../context/AppContext';
 import { themes } from '../utils/theme';
+import { useResolvedTheme } from '../utils/useResolvedTheme';
 import { TimerScreen, CalendarScreen, ProfileScreen, FirstRunScreen } from '../screens';
 
 const Tab = createBottomTabNavigator();
@@ -35,7 +36,8 @@ const ProfileIcon = ({ color, size }: { color: string; size: number }) => (
 
 const TabNavigator: React.FC = () => {
   const { settings, t } = useApp();
-  const theme = themes[settings.theme];
+  const resolvedTheme = useResolvedTheme(settings.theme);
+  const theme = themes[resolvedTheme];
   const insets = useSafeAreaInsets();
   
   const bottomPadding = Math.max(insets.bottom, 8);

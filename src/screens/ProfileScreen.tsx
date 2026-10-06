@@ -1,12 +1,14 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { useApp, NoiseType } from '../context/AppContext';
+import { useApp, NoiseType, Theme } from '../context/AppContext';
 import { themes } from '../utils/theme';
+import { useResolvedTheme } from '../utils/useResolvedTheme';
 
 export const ProfileScreen: React.FC = () => {
   const { settings, updateSettings, t } = useApp();
-  const theme = themes[settings.theme];
+  const resolvedTheme = useResolvedTheme(settings.theme);
+  const theme = themes[resolvedTheme];
 
   const Stepper: React.FC<{
     value: number;
@@ -140,6 +142,11 @@ export const ProfileScreen: React.FC = () => {
       <View style={[styles.section, { backgroundColor: theme.surface }]}>
         <Text style={[styles.sectionTitle, { color: theme.text }]}>{t('theme')}</Text>
         <View style={styles.toggleGroup}>
+          <ToggleButton
+            label={t('auto')}
+            isActive={settings.theme === 'auto'}
+            onPress={() => updateSettings({ theme: 'auto' })}
+          />
           <ToggleButton
             label={t('dark')}
             isActive={settings.theme === 'dark'}

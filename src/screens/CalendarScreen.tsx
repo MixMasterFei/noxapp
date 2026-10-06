@@ -3,11 +3,13 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 import Svg, { Path } from 'react-native-svg';
 import { useApp, getLocalDateString } from '../context/AppContext';
 import { themes } from '../utils/theme';
+import { useResolvedTheme } from '../utils/useResolvedTheme';
 import { PawStamp } from '../components/PawStamp';
 
 export const CalendarScreen: React.FC = () => {
   const { settings, t, getSessionsForDate, getTotalStats } = useApp();
-  const theme = themes[settings.theme];
+  const resolvedTheme = useResolvedTheme(settings.theme);
+  const theme = themes[resolvedTheme];
   
   const [currentMonth, setCurrentMonth] = useState(new Date());
 

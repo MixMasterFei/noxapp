@@ -3,7 +3,7 @@ import { AppState, AppStateStatus, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Language, translations, TranslationKey } from '../i18n/translations';
 
-export type Theme = 'dark' | 'light';
+export type Theme = 'auto' | 'dark' | 'light';
 export type NoiseType = 'off' | 'rain' | 'night' | 'purr';
 export type TimerPhase = 'idle' | 'focus' | 'break' | 'longBreak' | 'done';
 
@@ -64,7 +64,7 @@ const defaultSettings: Settings = {
   focusDuration: 25,
   breakDuration: 5,
   longBreakDuration: 15,
-  theme: 'dark',
+  theme: 'auto',
   language: 'en',
   noise: 'off',
   hasSeenFirstRun: false,
