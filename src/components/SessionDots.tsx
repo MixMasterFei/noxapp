@@ -27,7 +27,6 @@ export const SessionDots: React.FC<SessionDotsProps> = ({
             style={[
               styles.dot,
               { backgroundColor: isFilled ? activeColor : inactiveColor },
-              isFilled && styles.activeDot,
             ]}
           />
         );
@@ -41,14 +40,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
+    marginTop: 4,
   },
   dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  activeDot: {
-    transform: [{ scale: 1.1 }],
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
 });

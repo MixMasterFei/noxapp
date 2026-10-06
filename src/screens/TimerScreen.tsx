@@ -4,6 +4,7 @@ import { Audio } from 'expo-av';
 import Svg, { Path } from 'react-native-svg';
 import { useApp } from '../context/AppContext';
 import { themes } from '../utils/theme';
+import { useResolvedTheme } from '../utils/useResolvedTheme';
 import { IdleCat, FocusCat, BreakCat, DoneCat } from '../components/cats';
 import { SessionDots } from '../components/SessionDots';
 
@@ -23,7 +24,8 @@ export const TimerScreen: React.FC = () => {
     updateSettings,
   } = useApp();
 
-  const theme = themes[settings.theme];
+  const resolvedTheme = useResolvedTheme(settings.theme);
+  const theme = themes[resolvedTheme];
   const soundRef = useRef<Audio.Sound | null>(null);
   const chimeRef = useRef<Audio.Sound | null>(null);
   const prevPhaseRef = useRef(timerState.phase);
@@ -224,6 +226,7 @@ export const TimerScreen: React.FC = () => {
         <Pressable
           style={[styles.playButton, { backgroundColor: theme.surface }]}
           onPress={handlePlayPause}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           {isRunning ? (
             <Svg width={32} height={32} viewBox="0 0 24 24">
@@ -245,63 +248,65 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     paddingTop: 60,
-    paddingHorizontal: 24,
+    paddingHorizontal: 32,
   },
   noiseButton: {
     position: 'absolute',
     top: 60,
-    right: 24,
+    right: 28,
     padding: 8,
   },
   phaseContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 40,
+    marginTop: 48,
     gap: 8,
   },
   phaseDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   phaseText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '400',
+    letterSpacing: 0.5,
   },
   timerText: {
-    fontSize: 72,
+    fontSize: 80,
     fontWeight: '200',
-    letterSpacing: -2,
+    letterSpacing: -3,
     marginTop: 8,
   },
   catContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginVertical: 20,
+    marginVertical: 24,
   },
   controlsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 16,
-    marginBottom: 40,
+    marginBottom: 48,
   },
   playButton: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     justifyContent: 'center',
     alignItems: 'center',
   },
   skipButton: {
     paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 24,
+    paddingVertical: 10,
+    borderRadius: 20,
     borderWidth: 1,
   },
   skipText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '500',
+    letterSpacing: 0.3,
   },
 });

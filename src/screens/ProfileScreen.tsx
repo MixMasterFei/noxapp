@@ -1,12 +1,14 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
-import { useApp, NoiseType } from '../context/AppContext';
+import { useApp, NoiseType, Theme } from '../context/AppContext';
 import { themes } from '../utils/theme';
+import { useResolvedTheme } from '../utils/useResolvedTheme';
 
 export const ProfileScreen: React.FC = () => {
   const { settings, updateSettings, t } = useApp();
-  const theme = themes[settings.theme];
+  const resolvedTheme = useResolvedTheme(settings.theme);
+  const theme = themes[resolvedTheme];
 
   const Stepper: React.FC<{
     value: number;
@@ -20,6 +22,7 @@ export const ProfileScreen: React.FC = () => {
         style={[styles.stepperButton, { backgroundColor: theme.surfaceSecondary }]}
         onPress={onDecrement}
         disabled={value <= min}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
         <Svg width={20} height={20} viewBox="0 0 24 24">
           <Path d="M5 12h14" stroke={value <= min ? theme.border : theme.text} strokeWidth={2} />
@@ -34,6 +37,7 @@ export const ProfileScreen: React.FC = () => {
         style={[styles.stepperButton, { backgroundColor: theme.surfaceSecondary }]}
         onPress={onIncrement}
         disabled={value >= max}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
         <Svg width={20} height={20} viewBox="0 0 24 24">
           <Path d="M12 5v14M5 12h14" stroke={value >= max ? theme.border : theme.text} strokeWidth={2} />
@@ -139,6 +143,11 @@ export const ProfileScreen: React.FC = () => {
         <Text style={[styles.sectionTitle, { color: theme.text }]}>{t('theme')}</Text>
         <View style={styles.toggleGroup}>
           <ToggleButton
+            label={t('auto')}
+            isActive={settings.theme === 'auto'}
+            onPress={() => updateSettings({ theme: 'auto' })}
+          />
+          <ToggleButton
             label={t('dark')}
             isActive={settings.theme === 'dark'}
             onPress={() => updateSettings({ theme: 'dark' })}
@@ -183,13 +192,14 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingTop: 60,
-    paddingHorizontal: 16,
-    paddingBottom: 40,
+    paddingHorizontal: 20,
+    paddingBottom: 48,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '700',
-    marginBottom: 24,
+    fontSize: 26,
+    fontWeight: '600',
+    marginBottom: 28,
+    letterSpacing: 0.3,
   },
   section: {
     borderRadius: 16,
@@ -197,11 +207,11 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: 11,
     fontWeight: '600',
-    marginBottom: 12,
+    marginBottom: 14,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
   },
   settingRow: {
     flexDirection: 'row',
@@ -210,13 +220,14 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   settingLabel: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '500',
     flex: 1,
+    letterSpacing: 0.2,
   },
   divider: {
     height: 1,
-    marginVertical: 8,
+    marginVertical: 10,
   },
   stepperContainer: {
     flexDirection: 'row',
@@ -224,43 +235,46 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   stepperButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     justifyContent: 'center',
     alignItems: 'center',
   },
   stepperValue: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '500',
-    minWidth: 60,
+    minWidth: 56,
     textAlign: 'center',
+    letterSpacing: 0.2,
   },
   toggleGroup: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 10,
   },
   toggleButton: {
     paddingHorizontal: 16,
     paddingVertical: 10,
-    borderRadius: 20,
+    borderRadius: 18,
     borderWidth: 1,
   },
   toggleText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '500',
+    letterSpacing: 0.2,
   },
   appInfo: {
     alignItems: 'center',
-    marginTop: 24,
+    marginTop: 32,
   },
   appName: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
+    letterSpacing: 1,
   },
   appVersion: {
-    fontSize: 12,
+    fontSize: 11,
     marginTop: 4,
   },
 });

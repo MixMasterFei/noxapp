@@ -34,6 +34,7 @@ export const translations = {
     
     // Theme
     theme: 'Theme',
+    auto: 'Auto',
     dark: 'Dark',
     light: 'Light',
     
@@ -108,6 +109,7 @@ export const translations = {
     
     // Theme
     theme: 'Thème',
+    auto: 'Auto',
     dark: 'Sombre',
     light: 'Clair',
     

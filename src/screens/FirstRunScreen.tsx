@@ -2,13 +2,15 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { useApp } from '../context/AppContext';
 import { themes } from '../utils/theme';
+import { useResolvedTheme } from '../utils/useResolvedTheme';
 import { IdleCat } from '../components/cats';
 
 const { width } = Dimensions.get('window');
 
 export const FirstRunScreen: React.FC = () => {
   const { settings, updateSettings, t } = useApp();
-  const theme = themes[settings.theme];
+  const resolvedTheme = useResolvedTheme(settings.theme);
+  const theme = themes[resolvedTheme];
 
   const handleTapCat = () => {
     updateSettings({ hasSeenFirstRun: true });
@@ -45,7 +47,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     paddingVertical: 80,
-    paddingHorizontal: 32,
+    paddingHorizontal: 40,
   },
   content: {
     flex: 1,
@@ -53,20 +55,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   catContainer: {
-    marginBottom: 48,
+    marginBottom: 56,
   },
   titleContainer: {
     alignItems: 'center',
   },
   title: {
-    fontSize: 42,
+    fontSize: 36,
     fontWeight: '200',
-    letterSpacing: 2,
+    letterSpacing: 3,
   },
   subtitle: {
-    fontSize: 42,
+    fontSize: 36,
     fontWeight: '600',
-    letterSpacing: 2,
-    marginTop: -4,
+    letterSpacing: 3,
+    marginTop: -2,
   },
 });

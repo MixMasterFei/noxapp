@@ -4,9 +4,11 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Audio } from 'expo-av';
 import { AppProvider, useApp } from './src/context/AppContext';
 import { AppNavigator } from './src/navigation/AppNavigator';
+import { useResolvedTheme } from './src/utils/useResolvedTheme';
 
 const AppContent: React.FC = () => {
   const { settings } = useApp();
+  const resolvedTheme = useResolvedTheme(settings.theme);
   
   useEffect(() => {
     Audio.setAudioModeAsync({
@@ -17,7 +19,7 @@ const AppContent: React.FC = () => {
   
   return (
     <>
-      <StatusBar style={settings.theme === 'dark' ? 'light' : 'dark'} />
+      <StatusBar style={resolvedTheme === 'dark' ? 'light' : 'dark'} />
       <AppNavigator />
     </>
   );
