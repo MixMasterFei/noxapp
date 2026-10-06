@@ -43,6 +43,7 @@ const TabNavigator: React.FC = () => {
   
   const minBottomPadding = Platform.OS === 'web' ? 24 : 8;
   const bottomPadding = Math.max(insets.bottom, minBottomPadding);
+  const tabBarHeight = 49 + 12 + bottomPadding;
 
   return (
     <Tab.Navigator
@@ -52,6 +53,7 @@ const TabNavigator: React.FC = () => {
           backgroundColor: theme.surface,
           borderTopColor: theme.border,
           borderTopWidth: 1,
+          height: tabBarHeight,
           paddingBottom: bottomPadding,
           paddingTop: 12,
         },
