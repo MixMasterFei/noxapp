@@ -39,25 +39,27 @@ export const IdleCat: React.FC<IdleCatProps> = ({ width = 200, height = 240 }) =
       <Path d="M143 55 L148 35 L130 52 Z" fill="#C4858B" />
       
       {/* Left eye */}
-      <Circle cx="75" cy="90" r="18" fill="#F5C518" />
-      <Circle cx="75" cy="90" r="8" fill="#1a1a1a" />
+      <Ellipse cx="75" cy="90" rx="17" ry="18" fill="#F5C518" />
+      <Circle cx="75" cy="90" r="7" fill="#1a1a1a" />
+      <Circle cx="72" cy="86" r="3" fill="#F5C518" opacity="0.4" />
       
       {/* Right eye */}
-      <Circle cx="125" cy="90" r="18" fill="#F5C518" />
-      <Circle cx="125" cy="90" r="8" fill="#1a1a1a" />
+      <Ellipse cx="125" cy="90" rx="17" ry="18" fill="#F5C518" />
+      <Circle cx="125" cy="90" r="7" fill="#1a1a1a" />
+      <Circle cx="122" cy="86" r="3" fill="#F5C518" opacity="0.4" />
       
       {/* Nose */}
       <Path d="M100 110 L95 118 L105 118 Z" fill="#6B6B6B" />
       
       {/* Whiskers left */}
-      <Path d="M70 115 L30 105" stroke="#4a4a4a" strokeWidth="1.5" fill="none" />
-      <Path d="M70 118 L30 118" stroke="#4a4a4a" strokeWidth="1.5" fill="none" />
-      <Path d="M70 121 L30 131" stroke="#4a4a4a" strokeWidth="1.5" fill="none" />
+      <Path d="M70 115 L30 105" stroke="#4a4a4a" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+      <Path d="M70 118 L30 118" stroke="#4a4a4a" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+      <Path d="M70 121 L30 131" stroke="#4a4a4a" strokeWidth="1.5" fill="none" strokeLinecap="round" />
       
       {/* Whiskers right */}
-      <Path d="M130 115 L170 105" stroke="#4a4a4a" strokeWidth="1.5" fill="none" />
-      <Path d="M130 118 L170 118" stroke="#4a4a4a" strokeWidth="1.5" fill="none" />
-      <Path d="M130 121 L170 131" stroke="#4a4a4a" strokeWidth="1.5" fill="none" />
+      <Path d="M130 115 L170 105" stroke="#4a4a4a" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+      <Path d="M130 118 L170 118" stroke="#4a4a4a" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+      <Path d="M130 121 L170 131" stroke="#4a4a4a" strokeWidth="1.5" fill="none" strokeLinecap="round" />
       
       {/* Tail curling up */}
       <Path

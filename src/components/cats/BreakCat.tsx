@@ -58,13 +58,13 @@ export const BreakCat: React.FC<BreakCatProps> = ({ width = 200, height = 140 })
       <Path d="M55 78 L51 84 L59 84 Z" fill="#6B6B6B" />
       
       {/* Whiskers */}
-      <Path d="M40 82 L15 76" stroke="#4a4a4a" strokeWidth="1.5" fill="none" />
-      <Path d="M40 85 L15 85" stroke="#4a4a4a" strokeWidth="1.5" fill="none" />
-      <Path d="M40 88 L15 94" stroke="#4a4a4a" strokeWidth="1.5" fill="none" />
+      <Path d="M40 82 L15 76" stroke="#4a4a4a" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+      <Path d="M40 85 L15 85" stroke="#4a4a4a" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+      <Path d="M40 88 L15 94" stroke="#4a4a4a" strokeWidth="1.5" fill="none" strokeLinecap="round" />
       
-      <Path d="M70 82 L95 76" stroke="#4a4a4a" strokeWidth="1.5" fill="none" />
-      <Path d="M70 85 L95 85" stroke="#4a4a4a" strokeWidth="1.5" fill="none" />
-      <Path d="M70 88 L95 94" stroke="#4a4a4a" strokeWidth="1.5" fill="none" />
+      <Path d="M70 82 L95 76" stroke="#4a4a4a" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+      <Path d="M70 85 L95 85" stroke="#4a4a4a" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+      <Path d="M70 88 L95 94" stroke="#4a4a4a" strokeWidth="1.5" fill="none" strokeLinecap="round" />
       
       {/* Tail wrapped around - tucked loaf style */}
       <Path

@@ -1,5 +1,5 @@
 import React from 'react';
-import Svg, { Path, Circle } from 'react-native-svg';
+import Svg, { Path, Circle, Ellipse } from 'react-native-svg';
 
 interface FocusCatProps {
   width?: number;
@@ -9,7 +9,7 @@ interface FocusCatProps {
 export const FocusCat: React.FC<FocusCatProps> = ({ width = 200, height = 160 }) => {
   return (
     <Svg width={width} height={height} viewBox="0 0 200 160">
-      {/* Body - pounce/play-bow silhouette - flat black */}
+      {/* Body - pounce/play-bow silhouette */}
       <Path
         d="M30 100
            C20 95 15 85 20 75
@@ -31,30 +31,35 @@ export const FocusCat: React.FC<FocusCatProps> = ({ width = 200, height = 160 })
       />
       
       {/* Head - lower, ready to pounce */}
-      <Circle cx="50" cy="75" r="35" fill="#1a1a1a" />
+      <Ellipse cx="50" cy="75" rx="36" ry="34" fill="#1a1a1a" />
       
       {/* Left ear */}
-      <Path d="M25 50 L15 20 L40 45 Z" fill="#1a1a1a" />
+      <Path d="M22 52 L12 18 L42 46 Z" fill="#1a1a1a" />
+      <Path d="M24 48 L18 28 L38 44 Z" fill="#C4858B" />
       
       {/* Right ear */}
-      <Path d="M75 50 L85 20 L60 45 Z" fill="#1a1a1a" />
+      <Path d="M78 52 L88 18 L58 46 Z" fill="#1a1a1a" />
+      <Path d="M76 48 L82 28 L62 44 Z" fill="#C4858B" />
       
-      {/* Eyes - white circles (alert/focused) */}
-      <Circle cx="38" cy="72" r="10" fill="#ffffff" />
-      <Circle cx="62" cy="72" r="10" fill="#ffffff" />
+      {/* Eyes - yellow, wide and alert */}
+      <Ellipse cx="36" cy="72" rx="11" ry="12" fill="#F5C518" />
+      <Ellipse cx="64" cy="72" rx="11" ry="12" fill="#F5C518" />
       
-      {/* Pupils - small and focused */}
-      <Circle cx="40" cy="72" r="4" fill="#1a1a1a" />
-      <Circle cx="64" cy="72" r="4" fill="#1a1a1a" />
+      {/* Pupils - dilated, focused */}
+      <Circle cx="38" cy="72" r="5" fill="#1a1a1a" />
+      <Circle cx="66" cy="72" r="5" fill="#1a1a1a" />
       
-      {/* Whiskers - white */}
-      <Path d="M30 85 L5 78" stroke="#ffffff" strokeWidth="1.5" fill="none" />
-      <Path d="M30 88 L5 88" stroke="#ffffff" strokeWidth="1.5" fill="none" />
-      <Path d="M30 91 L5 98" stroke="#ffffff" strokeWidth="1.5" fill="none" />
+      {/* Nose */}
+      <Path d="M50 88 L46 94 L54 94 Z" fill="#6B6B6B" />
       
-      <Path d="M70 85 L95 78" stroke="#ffffff" strokeWidth="1.5" fill="none" />
-      <Path d="M70 88 L95 88" stroke="#ffffff" strokeWidth="1.5" fill="none" />
-      <Path d="M70 91 L95 98" stroke="#ffffff" strokeWidth="1.5" fill="none" />
+      {/* Whiskers */}
+      <Path d="M35 92 L8 84" stroke="#4a4a4a" strokeWidth="1.5" fill="none" />
+      <Path d="M35 95 L8 95" stroke="#4a4a4a" strokeWidth="1.5" fill="none" />
+      <Path d="M35 98 L8 106" stroke="#4a4a4a" strokeWidth="1.5" fill="none" />
+      
+      <Path d="M65 92 L92 84" stroke="#4a4a4a" strokeWidth="1.5" fill="none" />
+      <Path d="M65 95 L92 95" stroke="#4a4a4a" strokeWidth="1.5" fill="none" />
+      <Path d="M65 98 L92 106" stroke="#4a4a4a" strokeWidth="1.5" fill="none" />
       
       {/* Tail - up and alert */}
       <Path
@@ -67,7 +72,7 @@ export const FocusCat: React.FC<FocusCatProps> = ({ width = 200, height = 160 })
         fill="none"
       />
       
-      {/* Back haunches - ready to spring */}
+      {/* Back haunches */}
       <Path
         d="M150 115 C165 105 170 120 165 135"
         fill="#1a1a1a"

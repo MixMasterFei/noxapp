@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     paddingVertical: 80,
-    paddingHorizontal: 32,
+    paddingHorizontal: 40,
   },
   content: {
     flex: 1,
@@ -53,20 +53,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   catContainer: {
-    marginBottom: 48,
+    marginBottom: 56,
   },
   titleContainer: {
     alignItems: 'center',
   },
   title: {
-    fontSize: 42,
+    fontSize: 36,
     fontWeight: '200',
-    letterSpacing: 2,
+    letterSpacing: 3,
   },
   subtitle: {
-    fontSize: 42,
+    fontSize: 36,
     fontWeight: '600',
-    letterSpacing: 2,
-    marginTop: -4,
+    letterSpacing: 3,
+    marginTop: -2,
   },
 });

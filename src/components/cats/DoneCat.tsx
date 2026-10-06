@@ -66,13 +66,13 @@ export const DoneCat: React.FC<DoneCatProps> = ({ width = 200, height = 180 }) =
       />
       
       {/* Whiskers */}
-      <Path d="M30 88 L8 82" stroke="#4a4a4a" strokeWidth="1.5" fill="none" />
-      <Path d="M30 91 L8 91" stroke="#4a4a4a" strokeWidth="1.5" fill="none" />
-      <Path d="M30 94 L8 100" stroke="#4a4a4a" strokeWidth="1.5" fill="none" />
+      <Path d="M30 88 L8 82" stroke="#4a4a4a" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+      <Path d="M30 91 L8 91" stroke="#4a4a4a" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+      <Path d="M30 94 L8 100" stroke="#4a4a4a" strokeWidth="1.5" fill="none" strokeLinecap="round" />
       
-      <Path d="M60 88 L82 82" stroke="#4a4a4a" strokeWidth="1.5" fill="none" />
-      <Path d="M60 91 L82 91" stroke="#4a4a4a" strokeWidth="1.5" fill="none" />
-      <Path d="M60 94 L82 100" stroke="#4a4a4a" strokeWidth="1.5" fill="none" />
+      <Path d="M60 88 L82 82" stroke="#4a4a4a" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+      <Path d="M60 91 L82 91" stroke="#4a4a4a" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+      <Path d="M60 94 L82 100" stroke="#4a4a4a" strokeWidth="1.5" fill="none" strokeLinecap="round" />
       
       {/* Front paws stretched out */}
       <Ellipse cx="30" cy="155" rx="18" ry="8" fill="#1a1a1a" />
