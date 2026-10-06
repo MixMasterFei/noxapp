@@ -8,13 +8,12 @@ interface FocusCatProps {
 
 export const FocusCat: React.FC<FocusCatProps> = ({ width = 200, height = 160 }) => {
   const bobAnim = useRef(new Animated.Value(0)).current;
-  const tailAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     const bob = Animated.loop(
       Animated.sequence([
         Animated.timing(bobAnim, {
-          toValue: -4,
+          toValue: -3,
           duration: 800,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
@@ -28,36 +27,12 @@ export const FocusCat: React.FC<FocusCatProps> = ({ width = 200, height = 160 })
       ])
     );
 
-    const tailQuiver = Animated.loop(
-      Animated.sequence([
-        Animated.timing(tailAnim, {
-          toValue: 1,
-          duration: 200,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(tailAnim, {
-          toValue: -1,
-          duration: 200,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ])
-    );
-
     bob.start();
-    tailQuiver.start();
 
     return () => {
       bob.stop();
-      tailQuiver.stop();
     };
-  }, []);
-
-  const tailRotate = tailAnim.interpolate({
-    inputRange: [-1, 0, 1],
-    outputRange: ['-2deg', '0deg', '2deg'],
-  });
+  }, [bobAnim]);
 
   return (
     <View style={[styles.container, { width, height }]}>
@@ -67,13 +42,12 @@ export const FocusCat: React.FC<FocusCatProps> = ({ width = 200, height = 160 })
           {
             transform: [
               { translateY: bobAnim },
-              { rotate: tailRotate },
             ],
           },
         ]}
       >
         <Image
-          source={require('../../../assets/cats/cat-focus.jpg')}
+          source={require('../../../assets/cats/cat-focus.png')}
           style={[styles.catImage, { width, height }]}
           resizeMode="contain"
         />

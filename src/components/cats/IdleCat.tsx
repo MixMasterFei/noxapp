@@ -8,14 +8,13 @@ interface IdleCatProps {
 
 export const IdleCat: React.FC<IdleCatProps> = ({ width = 200, height = 240 }) => {
   const breatheAnim = useRef(new Animated.Value(1)).current;
-  const blinkAnim = useRef(new Animated.Value(1)).current;
-  const tailAnim = useRef(new Animated.Value(0)).current;
+  const translateAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     const breathe = Animated.loop(
       Animated.sequence([
         Animated.timing(breatheAnim, {
-          toValue: 1.02,
+          toValue: 1.015,
           duration: 2000,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
@@ -29,40 +28,16 @@ export const IdleCat: React.FC<IdleCatProps> = ({ width = 200, height = 240 }) =
       ])
     );
 
-    const blink = () => {
-      const delay = 3000 + Math.random() * 4000;
-      setTimeout(() => {
-        Animated.sequence([
-          Animated.timing(blinkAnim, {
-            toValue: 0.1,
-            duration: 80,
-            useNativeDriver: true,
-          }),
-          Animated.timing(blinkAnim, {
-            toValue: 1,
-            duration: 80,
-            useNativeDriver: true,
-          }),
-        ]).start(() => blink());
-      }, delay);
-    };
-
-    const tailSway = Animated.loop(
+    const sway = Animated.loop(
       Animated.sequence([
-        Animated.timing(tailAnim, {
-          toValue: 1,
+        Animated.timing(translateAnim, {
+          toValue: 2,
           duration: 3000,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
         }),
-        Animated.timing(tailAnim, {
-          toValue: -1,
-          duration: 3000,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(tailAnim, {
-          toValue: 0,
+        Animated.timing(translateAnim, {
+          toValue: -2,
           duration: 3000,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
@@ -71,19 +46,13 @@ export const IdleCat: React.FC<IdleCatProps> = ({ width = 200, height = 240 }) =
     );
 
     breathe.start();
-    tailSway.start();
-    blink();
+    sway.start();
 
     return () => {
       breathe.stop();
-      tailSway.stop();
+      sway.stop();
     };
-  }, []);
-
-  const tailRotate = tailAnim.interpolate({
-    inputRange: [-1, 0, 1],
-    outputRange: ['-3deg', '0deg', '3deg'],
-  });
+  }, [breatheAnim, translateAnim]);
 
   return (
     <View style={[styles.container, { width, height }]}>
@@ -93,13 +62,13 @@ export const IdleCat: React.FC<IdleCatProps> = ({ width = 200, height = 240 }) =
           {
             transform: [
               { scaleY: breatheAnim },
-              { rotate: tailRotate },
+              { translateY: translateAnim },
             ],
           },
         ]}
       >
         <Image
-          source={require('../../../assets/cats/cat-idle.jpg')}
+          source={require('../../../assets/cats/cat-idle.png')}
           style={[styles.catImage, { width, height }]}
           resizeMode="contain"
         />

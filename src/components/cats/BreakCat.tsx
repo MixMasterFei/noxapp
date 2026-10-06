@@ -13,7 +13,7 @@ export const BreakCat: React.FC<BreakCatProps> = ({ width = 200, height = 140 })
     const breathe = Animated.loop(
       Animated.sequence([
         Animated.timing(breatheAnim, {
-          toValue: 1.015,
+          toValue: 1.012,
           duration: 2500,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
@@ -32,7 +32,7 @@ export const BreakCat: React.FC<BreakCatProps> = ({ width = 200, height = 140 })
     return () => {
       breathe.stop();
     };
-  }, []);
+  }, [breatheAnim]);
 
   return (
     <View style={[styles.container, { width, height }]}>
@@ -41,14 +41,13 @@ export const BreakCat: React.FC<BreakCatProps> = ({ width = 200, height = 140 })
           styles.catWrapper,
           {
             transform: [
-              { scaleX: breatheAnim },
-              { scaleY: breatheAnim },
+              { scale: breatheAnim },
             ],
           },
         ]}
       >
         <Image
-          source={require('../../../assets/cats/cat-break.jpg')}
+          source={require('../../../assets/cats/cat-break.png')}
           style={[styles.catImage, { width, height }]}
           resizeMode="contain"
         />
