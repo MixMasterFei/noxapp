@@ -1,4 +1,5 @@
 import React from 'react';
+import { Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -40,7 +41,8 @@ const TabNavigator: React.FC = () => {
   const theme = themes[resolvedTheme];
   const insets = useSafeAreaInsets();
   
-  const bottomPadding = Math.max(insets.bottom, 8);
+  const minBottomPadding = Platform.OS === 'web' ? 24 : 8;
+  const bottomPadding = Math.max(insets.bottom, minBottomPadding);
 
   return (
     <Tab.Navigator
