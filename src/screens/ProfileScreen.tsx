@@ -20,6 +20,7 @@ export const ProfileScreen: React.FC = () => {
         style={[styles.stepperButton, { backgroundColor: theme.surfaceSecondary }]}
         onPress={onDecrement}
         disabled={value <= min}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
         <Svg width={20} height={20} viewBox="0 0 24 24">
           <Path d="M5 12h14" stroke={value <= min ? theme.border : theme.text} strokeWidth={2} />
@@ -34,6 +35,7 @@ export const ProfileScreen: React.FC = () => {
         style={[styles.stepperButton, { backgroundColor: theme.surfaceSecondary }]}
         onPress={onIncrement}
         disabled={value >= max}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
         <Svg width={20} height={20} viewBox="0 0 24 24">
           <Path d="M12 5v14M5 12h14" stroke={value >= max ? theme.border : theme.text} strokeWidth={2} />

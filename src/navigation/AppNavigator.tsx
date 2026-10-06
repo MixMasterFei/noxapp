@@ -1,7 +1,8 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
-import Svg, { Path, Circle, Rect, G } from 'react-native-svg';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import { useApp } from '../context/AppContext';
 import { themes } from '../utils/theme';
 import { TimerScreen, CalendarScreen, ProfileScreen, FirstRunScreen } from '../screens';
@@ -32,9 +33,63 @@ const ProfileIcon = ({ color, size }: { color: string; size: number }) => (
   </Svg>
 );
 
-export const AppNavigator: React.FC = () => {
+const TabNavigator: React.FC = () => {
   const { settings, t } = useApp();
   const theme = themes[settings.theme];
+  const insets = useSafeAreaInsets();
+  
+  const bottomPadding = Math.max(insets.bottom, 8);
+
+  return (
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle: {
+          backgroundColor: theme.surface,
+          borderTopColor: theme.border,
+          borderTopWidth: 1,
+          paddingBottom: bottomPadding,
+          paddingTop: 12,
+        },
+        tabBarActiveTintColor: theme.accent,
+        tabBarInactiveTintColor: theme.textSecondary,
+        tabBarLabelStyle: {
+          fontSize: 10,
+          fontWeight: '500',
+          letterSpacing: 0.3,
+        },
+      }}
+    >
+      <Tab.Screen
+        name="Timer"
+        component={TimerScreen}
+        options={{
+          tabBarLabel: t('timer'),
+          tabBarIcon: ({ color, size }) => <TimerIcon color={color} size={size} />,
+        }}
+      />
+      <Tab.Screen
+        name="Calendar"
+        component={CalendarScreen}
+        options={{
+          tabBarLabel: t('calendar'),
+          tabBarIcon: ({ color, size }) => <CalendarIcon color={color} size={size} />,
+        }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{
+          tabBarLabel: t('profile'),
+          tabBarIcon: ({ color, size }) => <ProfileIcon color={color} size={size} />,
+        }}
+      />
+    </Tab.Navigator>
+  );
+};
+
+export const AppNavigator: React.FC = () => {
+  const { settings } = useApp();
 
   if (!settings.hasSeenFirstRun) {
     return (
@@ -46,51 +101,7 @@ export const AppNavigator: React.FC = () => {
 
   return (
     <NavigationContainer>
-      <Tab.Navigator
-        screenOptions={{
-          headerShown: false,
-          tabBarStyle: {
-            backgroundColor: theme.surface,
-            borderTopColor: theme.border,
-            borderTopWidth: 1,
-            height: 84,
-            paddingBottom: 24,
-            paddingTop: 12,
-          },
-          tabBarActiveTintColor: theme.accent,
-          tabBarInactiveTintColor: theme.textSecondary,
-          tabBarLabelStyle: {
-            fontSize: 10,
-            fontWeight: '500',
-            letterSpacing: 0.3,
-          },
-        }}
-      >
-        <Tab.Screen
-          name="Timer"
-          component={TimerScreen}
-          options={{
-            tabBarLabel: t('timer'),
-            tabBarIcon: ({ color, size }) => <TimerIcon color={color} size={size} />,
-          }}
-        />
-        <Tab.Screen
-          name="Calendar"
-          component={CalendarScreen}
-          options={{
-            tabBarLabel: t('calendar'),
-            tabBarIcon: ({ color, size }) => <CalendarIcon color={color} size={size} />,
-          }}
-        />
-        <Tab.Screen
-          name="Profile"
-          component={ProfileScreen}
-          options={{
-            tabBarLabel: t('profile'),
-            tabBarIcon: ({ color, size }) => <ProfileIcon color={color} size={size} />,
-          }}
-        />
-      </Tab.Navigator>
+      <TabNavigator />
     </NavigationContainer>
   );
 };

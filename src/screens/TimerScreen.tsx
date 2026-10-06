@@ -224,6 +224,7 @@ export const TimerScreen: React.FC = () => {
         <Pressable
           style={[styles.playButton, { backgroundColor: theme.surface }]}
           onPress={handlePlayPause}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           {isRunning ? (
             <Svg width={32} height={32} viewBox="0 0 24 24">
@@ -271,7 +272,7 @@ const styles = StyleSheet.create({
   },
   timerText: {
     fontSize: 80,
-    fontWeight: '100',
+    fontWeight: '200',
     letterSpacing: -3,
     marginTop: 8,
   },

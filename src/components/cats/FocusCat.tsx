@@ -53,13 +53,13 @@ export const FocusCat: React.FC<FocusCatProps> = ({ width = 200, height = 160 })
       <Path d="M50 88 L46 94 L54 94 Z" fill="#6B6B6B" />
       
       {/* Whiskers */}
-      <Path d="M35 92 L8 84" stroke="#4a4a4a" strokeWidth="1.5" fill="none" />
-      <Path d="M35 95 L8 95" stroke="#4a4a4a" strokeWidth="1.5" fill="none" />
-      <Path d="M35 98 L8 106" stroke="#4a4a4a" strokeWidth="1.5" fill="none" />
+      <Path d="M35 92 L8 84" stroke="#4a4a4a" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+      <Path d="M35 95 L8 95" stroke="#4a4a4a" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+      <Path d="M35 98 L8 106" stroke="#4a4a4a" strokeWidth="1.5" fill="none" strokeLinecap="round" />
       
-      <Path d="M65 92 L92 84" stroke="#4a4a4a" strokeWidth="1.5" fill="none" />
-      <Path d="M65 95 L92 95" stroke="#4a4a4a" strokeWidth="1.5" fill="none" />
-      <Path d="M65 98 L92 106" stroke="#4a4a4a" strokeWidth="1.5" fill="none" />
+      <Path d="M65 92 L92 84" stroke="#4a4a4a" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+      <Path d="M65 95 L92 95" stroke="#4a4a4a" strokeWidth="1.5" fill="none" strokeLinecap="round" />
+      <Path d="M65 98 L92 106" stroke="#4a4a4a" strokeWidth="1.5" fill="none" strokeLinecap="round" />
       
       {/* Tail - up and alert */}
       <Path
